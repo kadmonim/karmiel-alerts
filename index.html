@@ -640,17 +640,18 @@ async function loadData() {
 function computeStats() {
   const sorted = [...allAlerts].sort((a, b) => a.alertDate.localeCompare(b.alertDate));
 
-  // Warning to event gaps
+  // Warning to event gaps: for each event (cat 1/2), find the closest preceding warning (cat 14)
   const warningGaps = [];
   for (let i = 0; i < sorted.length; i++) {
-    if (sorted[i].category === 14) {
-      for (let j = i + 1; j < sorted.length; j++) {
-        if (sorted[j].category !== 14) {
-          const t1 = new Date(sorted[i].alertDate);
-          const t2 = new Date(sorted[j].alertDate);
+    if (sorted[i].category === 1 || sorted[i].category === 2) {
+      for (let j = i - 1; j >= 0; j--) {
+        if (sorted[j].category === 14) {
+          const t1 = new Date(sorted[j].alertDate);
+          const t2 = new Date(sorted[i].alertDate);
           warningGaps.push((t2 - t1) / 60000);
           break;
         }
+        if (sorted[j].category === 1 || sorted[j].category === 2) break;
       }
     }
   }
