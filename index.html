@@ -651,7 +651,7 @@ function computeStats() {
           warningGaps.push((t2 - t1) / 60000);
           break;
         }
-        if (sorted[j].category === 1 || sorted[j].category === 2) break;
+        if (sorted[j].category !== 14) break;
       }
     }
   }
