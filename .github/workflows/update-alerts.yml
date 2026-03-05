@@ -1,0 +1,32 @@
+name: Update Karmiel Alerts
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download source CSV
+        run: curl -sL https://raw.githubusercontent.com/dleshem/israel-alerts-data/main/israel-alerts.csv -o israel-alerts.csv
+
+      - name: Extract Karmiel alerts
+        run: python3 extract_karmiel.py
+
+      - name: Check for changes
+        id: diff
+        run: |
+          git diff --quiet karmiel-alerts.csv && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add karmiel-alerts.csv
+          git commit -m "Update Karmiel alerts data"
+          git push

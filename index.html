@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>התרעות כרמיאל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Rubik:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-hover: #1a1a26;
+    --border: #1e1e2e;
+    --text: #e0dfe6;
+    --text-dim: #6b6a7a;
+    --rocket-color: #ff4d3a;
+    --rocket-glow: rgba(255, 77, 58, 0.15);
+    --rocket-bg: rgba(255, 77, 58, 0.06);
+    --uav-color: #3a9eff;
+    --uav-glow: rgba(58, 158, 255, 0.15);
+    --uav-bg: rgba(58, 158, 255, 0.06);
+    --ended-color: #5a9a6a;
+    --ended-glow: rgba(90, 154, 106, 0.15);
+    --ended-bg: rgba(90, 154, 106, 0.06);
+    --warning-color: #e0a030;
+    --warning-glow: rgba(224, 160, 48, 0.15);
+    --warning-bg: rgba(224, 160, 48, 0.06);
+    --accent: #ff4d3a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h1 {
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #fff 0%, #999 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 24px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: 900;
+    font-family: 'Rubik', sans-serif;
+    line-height: 1;
+  }
+
+  .stat-value.rockets { color: var(--rocket-color); }
+  .stat-value.uav { color: var(--uav-color); }
+  .stat-value.total { color: #fff; }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  /* Filters */
+  .filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-btn {
+    font-family: 'Heebo', sans-serif;
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 400;
+  }
+
+  .filter-btn:hover {
+    border-color: #333;
+    color: var(--text);
+  }
+
+  .filter-btn.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: rgba(255, 77, 58, 0.08);
+  }
+
+  .filter-btn.active[data-filter="uav"] {
+    border-color: var(--uav-color);
+    background: rgba(58, 158, 255, 0.08);
+  }
+
+  .filter-btn.active[data-filter="ended"] {
+    border-color: var(--ended-color);
+    background: rgba(90, 154, 106, 0.08);
+  }
+
+  .filter-btn.active[data-filter="warning"] {
+    border-color: var(--warning-color);
+    background: rgba(224, 160, 48, 0.08);
+  }
+
+  .date-input {
+    font-family: 'Rubik', sans-serif;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.85rem;
+    direction: ltr;
+    cursor: pointer;
+  }
+
+  .date-input:focus {
+    outline: none;
+    border-color: #444;
+  }
+
+  .date-sep {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+  }
+
+  .year-group {
+    margin-bottom: 8px;
+  }
+
+  .year-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    padding: 12px 0;
+    font-family: 'Rubik', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #fff;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+
+  .year-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    right: 0;
+    width: 60px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .alert-row {
+    display: grid;
+    grid-template-columns: 100px 70px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: 8px;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .alert-row:hover {
+    background: var(--surface);
+    border-color: var(--border);
+  }
+
+  .alert-date {
+    font-family: 'Rubik', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text);
+    direction: ltr;
+    text-align: right;
+  }
+
+  .alert-time {
+    font-family: 'Rubik', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    direction: ltr;
+    text-align: right;
+  }
+
+  .alert-type {
+    font-size: 0.85rem;
+    font-weight: 400;
+  }
+
+  .alert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: 'Rubik', sans-serif;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .alert-badge.rocket {
+    background: var(--rocket-bg);
+    color: var(--rocket-color);
+    border: 1px solid rgba(255, 77, 58, 0.12);
+  }
+
+  .alert-badge.uav {
+    background: var(--uav-bg);
+    color: var(--uav-color);
+    border: 1px solid rgba(58, 158, 255, 0.12);
+  }
+
+  .alert-badge.ended {
+    background: var(--ended-bg);
+    color: var(--ended-color);
+    border: 1px solid rgba(90, 154, 106, 0.12);
+  }
+
+  .alert-badge.warning {
+    background: var(--warning-bg);
+    color: var(--warning-color);
+    border: 1px solid rgba(224, 160, 48, 0.12);
+  }
+
+  .alert-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .rocket .alert-badge-dot { background: var(--rocket-color); box-shadow: 0 0 6px var(--rocket-glow); }
+  .uav .alert-badge-dot { background: var(--uav-color); box-shadow: 0 0 6px var(--uav-glow); }
+  .ended .alert-badge-dot { background: var(--ended-color); box-shadow: 0 0 6px var(--ended-glow); }
+  .warning .alert-badge-dot { background: var(--warning-color); box-shadow: 0 0 6px var(--warning-glow); }
+
+  .no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+
+  /* Animations */
+  .alert-row {
+    animation: fadeIn 0.3s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 80px;
+    color: var(--text-dim);
+  }
+
+  .loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Insights section */
+  .insights {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .insights-row-full {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* Night/day donut */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 12px;
+  }
+
+  .donut-svg { flex-shrink: 0; }
+
+  .donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .donut-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+  }
+
+  .donut-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .donut-legend-value {
+    font-family: 'Rubik', sans-serif;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .donut-legend-label {
+    color: var(--text-dim);
+  }
+
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+
+  .insight-title {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-weight: 300;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .insight-big {
+    font-family: 'Rubik', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 600;
+    color: var(--warning-color);
+    line-height: 1;
+  }
+
+  .insight-unit {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    font-weight: 300;
+    margin-top: 4px;
+  }
+
+  .insight-detail {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  /* 24h chart */
+  .clock-chart {
+    position: relative;
+    height: 200px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    direction: ltr;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .clock-bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    position: relative;
+  }
+
+  .clock-bar {
+    width: 100%;
+    min-height: 2px;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .clock-bar-wrap:hover .clock-bar {
+    filter: brightness(1.3);
+    box-shadow: 0 0 12px rgba(255, 77, 58, 0.3);
+  }
+
+  .clock-bar-wrap:hover .clock-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-6px);
+  }
+
+  .clock-count {
+    font-family: 'Rubik', sans-serif;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .clock-bar-wrap:hover .clock-count {
+    opacity: 1;
+  }
+
+  .clock-count.visible {
+    opacity: 1;
+    color: var(--text);
+  }
+
+  .clock-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a26;
+    border: 1px solid var(--border);
+    color: #fff;
+    font-size: 0.75rem;
+    font-family: 'Rubik', sans-serif;
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.15s;
+    z-index: 5;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+
+  .clock-hour-label {
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    font-family: 'Rubik', sans-serif;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .clock-hour-label.dim {
+    color: #2a2a3a;
+  }
+
+  .clock-gridline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px dashed #1a1a2a;
+    pointer-events: none;
+  }
+
+  .clock-gridline-label {
+    position: absolute;
+    right: -4px;
+    top: -8px;
+    transform: translateX(100%);
+    font-size: 0.6rem;
+    font-family: 'Rubik', sans-serif;
+    color: #2a2a3a;
+  }
+
+  @media (max-width: 600px) {
+    .insights {
+      grid-template-columns: 1fr;
+    }
+    .insights-row-full {
+      grid-template-columns: 1fr;
+    }
+    h1 { font-size: 2rem; }
+    .container { padding: 24px 16px 60px; }
+    .alert-row {
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      padding: 12px;
+    }
+    .alert-time { text-align: left; }
+    .alert-type { grid-column: 1 / -1; }
+    .alert-badge { grid-column: 1 / -1; }
+    .stats-row { gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>התרעות כרמיאל</h1>
+    <div class="subtitle">צפייה בהתרעות פיקוד העורף עבור כרמיאל</div>
+    <div class="stats-row" id="stats"></div>
+  </header>
+
+  <div class="insights" id="insights"></div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">הכל</button>
+    <button class="filter-btn" data-filter="rocket">רקטות וטילים</button>
+    <button class="filter-btn" data-filter="uav">כלי טיס עוין</button>
+    <button class="filter-btn" data-filter="ended">האירוע הסתיים</button>
+    <button class="filter-btn" data-filter="warning">התרעה מוקדמת</button>
+    <span class="date-sep">|</span>
+    <input type="date" class="date-input" id="dateFrom" title="מתאריך">
+    <span class="date-sep">—</span>
+    <input type="date" class="date-input" id="dateTo" title="עד תאריך">
+  </div>
+
+  <div class="timeline" id="timeline">
+    <div class="loading">טוען נתונים</div>
+  </div>
+</div>
+
+<script>
+let allAlerts = [];
+let statsData = null;
+
+const CAT_MAP = {
+  1:  { type: 'rocket',  label: 'רקטות וטילים' },
+  2:  { type: 'uav',     label: 'כלי טיס עוין' },
+  13: { type: 'ended',   label: 'האירוע הסתיים' },
+  14: { type: 'warning', label: 'התרעה מוקדמת' },
+};
+
+function getAlertType(cat) {
+  return CAT_MAP[cat] || { type: 'rocket', label: 'אחר' };
+}
+
+async function loadData() {
+  const res = await fetch('karmiel-alerts.csv');
+  const text = await res.text();
+  const lines = text.trim().replace(/\r/g, '').split('\n');
+  const header = lines[0].split(',');
+  const ci = {};
+  header.forEach((h, i) => ci[h.trim()] = i);
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    if (cols.length < 7) continue;
+    const alertDate = cols[ci['alertDate']];
+    if (alertDate < '2026') continue;
+    const cat = parseInt(cols[ci['category']]);
+    allAlerts.push({
+      date: cols[ci['date']],
+      time: cols[ci['time']],
+      alertDate,
+      category: cat,
+      categoryDesc: cols[ci['category_desc']],
+      alertInfo: getAlertType(cat),
+    });
+  }
+  allAlerts.sort((a, b) => b.alertDate.localeCompare(a.alertDate));
+  statsData = computeStats();
+  renderStats();
+  renderInsights();
+  render();
+}
+
+function computeStats() {
+  const sorted = [...allAlerts].sort((a, b) => a.alertDate.localeCompare(b.alertDate));
+
+  // Warning to event gaps
+  const warningGaps = [];
+  for (let i = 0; i < sorted.length; i++) {
+    if (sorted[i].category === 14) {
+      for (let j = i + 1; j < sorted.length; j++) {
+        if (sorted[j].category !== 14) {
+          const t1 = new Date(sorted[i].alertDate);
+          const t2 = new Date(sorted[j].alertDate);
+          warningGaps.push((t2 - t1) / 60000);
+          break;
+        }
+      }
+    }
+  }
+
+  // Rounds (30 min gap)
+  const rounds = [];
+  let cur = [];
+  for (const a of sorted) {
+    if (cur.length) {
+      const last = new Date(cur[cur.length - 1].alertDate);
+      const now = new Date(a.alertDate);
+      if ((now - last) / 60000 > 30) {
+        rounds.push(cur);
+        cur = [];
+      }
+    }
+    cur.push(a);
+  }
+  if (cur.length) rounds.push(cur);
+
+  const realRounds = rounds.filter(r => r.some(a => a.category === 1 || a.category === 2));
+  const falseAlarms = rounds.filter(r => !r.some(a => a.category === 1 || a.category === 2));
+
+  // Night vs day
+  const active = sorted.filter(a => a.category === 1 || a.category === 2);
+  const night = active.filter(a => { const h = parseInt(a.time.slice(0,2)); return h >= 22 || h < 6; });
+  const day = active.filter(a => { const h = parseInt(a.time.slice(0,2)); return h >= 6 && h < 22; });
+  const totalActive = night.length + day.length;
+
+  return {
+    warningToEventMinutes: warningGaps,
+    avgWarningToEvent: warningGaps.length ? Math.round(warningGaps.reduce((s,v) => s+v, 0) / warningGaps.length * 10) / 10 : 0,
+    totalRounds: rounds.length,
+    realRounds: realRounds.length,
+    falseAlarms: falseAlarms.length,
+    nightAlerts: night.length,
+    dayAlerts: day.length,
+    nightPct: totalActive ? Math.round(night.length / totalActive * 100) : 0,
+  };
+}
+
+function renderStats() {
+  const rockets = allAlerts.filter(a => a.category === 1).length;
+  const uav = allAlerts.filter(a => a.category === 2).length;
+  const ended = allAlerts.filter(a => a.category === 13).length;
+  const warning = allAlerts.filter(a => a.category === 14).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat">
+      <span class="stat-value total">${allAlerts.length}</span>
+      <span class="stat-label">סה״כ התרעות</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value rockets">${rockets}</span>
+      <span class="stat-label">רקטות וטילים</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value uav">${uav}</span>
+      <span class="stat-label">כלי טיס עוין</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" style="color:var(--ended-color)">${ended}</span>
+      <span class="stat-label">האירוע הסתיים</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" style="color:var(--warning-color)">${warning}</span>
+      <span class="stat-label">התרעה מוקדמת</span>
+    </div>
+  `;
+}
+
+function renderInsights() {
+  const el = document.getElementById('insights');
+
+  // Warning-to-event stat
+  const avg = statsData.avgWarningToEvent || 0;
+  const gaps = statsData.warningToEventMinutes || [];
+  const minGap = gaps.length ? Math.round(Math.min(...gaps)) : 0;
+  const maxGap = gaps.length ? Math.round(Math.max(...gaps)) : 0;
+
+  // 24h distribution - count alerts per hour (only active alerts: cat 1, 2)
+  const hourCounts = new Array(24).fill(0);
+  allAlerts.forEach(a => {
+    if (a.category !== 1 && a.category !== 2) return;
+    const h = parseInt(a.time.slice(0, 2));
+    hourCounts[h]++;
+  });
+  const maxCount = Math.max(...hourCounts, 1);
+
+  let barsHtml = '';
+  for (let h = 0; h < 24; h++) {
+    const count = hourCounts[h];
+    const pct = (count / maxCount) * 100;
+    const color = count > 0 ? 'var(--rocket-color)' : 'var(--border)';
+    const opacity = count > 0 ? 0.4 + (count / maxCount) * 0.6 : 0.2;
+    const hLabel = String(h).padStart(2, '0');
+    const showLabel = true;
+    const labelCls = '';
+    const countVisible = count > 0 ? 'visible' : '';
+    barsHtml += `
+      <div class="clock-bar-wrap">
+        <span class="clock-count ${countVisible}">${count || ''}</span>
+        <div class="clock-bar" style="height:${Math.max(pct, 4)}%;background:${color};opacity:${opacity}">
+          <div class="clock-tooltip">${hLabel}:00–${hLabel}:59 — ${count} התרעות</div>
+        </div>
+        <span class="clock-hour-label ${labelCls}">${hLabel}</span>
+      </div>`;
+  }
+
+  // Night vs day donut
+  const nightCount = statsData.nightAlerts || 0;
+  const dayCount = statsData.dayAlerts || 0;
+  const nightPct = statsData.nightPct || 0;
+  const dayPct = 100 - nightPct;
+  // SVG donut
+  const r = 40, cx = 50, cy = 50, circ = 2 * Math.PI * r;
+  const nightArc = circ * nightPct / 100;
+  const dayArc = circ * dayPct / 100;
+
+  // Rounds
+  const totalRounds = statsData.totalRounds || 0;
+  const realRounds = statsData.realRounds || 0;
+  const falseAlarms = statsData.falseAlarms || 0;
+
+  el.innerHTML = `
+    <div class="insight-card">
+      <div class="insight-title">זמן ממוצע מהתרעה מוקדמת לאירוע</div>
+      <div class="insight-big">${avg}</div>
+      <div class="insight-unit">דקות</div>
+      <div class="insight-detail">טווח: ${minGap}–${maxGap} דקות (${gaps.length} מדידות)</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-title">לילה מול יום (התרעות פעילות בלבד)</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="100" height="100" viewBox="0 0 100 100">
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="12"/>
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#6366f1" stroke-width="12"
+            stroke-dasharray="${nightArc} ${circ - nightArc}"
+            stroke-dashoffset="${circ * 0.25}"
+            stroke-linecap="round"/>
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#fbbf24" stroke-width="12"
+            stroke-dasharray="${dayArc} ${circ - dayArc}"
+            stroke-dashoffset="${circ * 0.25 - nightArc}"
+            stroke-linecap="round"/>
+        </svg>
+        <div class="donut-legend">
+          <div class="donut-legend-item">
+            <span class="donut-legend-dot" style="background:#6366f1"></span>
+            <span class="donut-legend-value">${nightCount}</span>
+            <span class="donut-legend-label">לילה (22:00–06:00) ${nightPct}%</span>
+          </div>
+          <div class="donut-legend-item">
+            <span class="donut-legend-dot" style="background:#fbbf24"></span>
+            <span class="donut-legend-value">${dayCount}</span>
+            <span class="donut-legend-label">יום (06:00–22:00) ${dayPct}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="insight-card" style="grid-column: 1 / -1">
+      <div class="insight-title">התרעות לפי שעה ביום (רקטות + כלי טיס)</div>
+      <div class="clock-chart">${barsHtml}</div>
+    </div>
+    <div class="insights-row-full">
+      <div class="insight-card">
+        <div class="insight-title">סה״כ סבבים</div>
+        <div class="insight-big" style="color:#fff">${totalRounds}</div>
+        <div class="insight-detail">סבב = התרעות עם פחות מ-30 דקות הפרש</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-title">סבבים אמיתיים</div>
+        <div class="insight-big" style="color:var(--rocket-color)">${realRounds}</div>
+        <div class="insight-detail">כללו רקטות או כלי טיס</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-title">אזעקות שווא</div>
+        <div class="insight-big" style="color:var(--text-dim)">${falseAlarms}</div>
+        <div class="insight-detail">התרעה מוקדמת בלבד, ללא אירוע</div>
+      </div>
+    </div>
+  `;
+}
+
+function getFilteredAlerts() {
+  const activeBtn = document.querySelector('.filter-btn.active');
+  const filter = activeBtn?.dataset.filter || 'all';
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+
+  return allAlerts.filter(a => {
+    if (filter !== 'all' && a.alertInfo.type !== filter) return false;
+    const d = a.alertDate.slice(0, 10);
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  });
+}
+
+function render() {
+  const filtered = getFilteredAlerts();
+  const timeline = document.getElementById('timeline');
+
+  if (filtered.length === 0) {
+    timeline.innerHTML = '<div class="no-results">לא נמצאו התרעות</div>';
+    return;
+  }
+
+  // Group by year
+  const groups = {};
+  filtered.forEach(a => {
+    const year = a.alertDate.slice(0, 4);
+    if (!groups[year]) groups[year] = [];
+    groups[year].push(a);
+  });
+
+  const years = Object.keys(groups).sort((a, b) => b - a);
+  let html = '';
+  let delay = 0;
+
+  years.forEach(year => {
+    html += `<div class="year-group"><div class="year-header">${year}</div>`;
+    groups[year].forEach(a => {
+      const { type: cls, label } = a.alertInfo;
+      const dateStr = a.date;
+      const timeStr = a.time.slice(0, 5);
+      const d = Math.min(delay, 800);
+      html += `
+        <div class="alert-row" style="animation-delay:${d}ms">
+          <span class="alert-date">${dateStr}</span>
+          <span class="alert-time">${timeStr}</span>
+          <span class="alert-type">${a.categoryDesc}</span>
+          <span class="alert-badge ${cls}">
+            <span class="alert-badge-dot"></span>
+            ${label}
+          </span>
+        </div>`;
+      delay += 15;
+    });
+    html += '</div>';
+  });
+
+  timeline.innerHTML = html;
+}
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+// Date filters
+document.getElementById('dateFrom').addEventListener('change', render);
+document.getElementById('dateTo').addEventListener('change', render);
+
+loadData();
+</script>
+</body>
+</html>
